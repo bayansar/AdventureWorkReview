@@ -1,31 +1,45 @@
 package main
 
 import (
-	"net/http"
-	"fmt"
-	"log"
 	"encoding/json"
+	"fmt"
+	"github.com/bayansar/AdventureWorkReview/rabbitmq"
+	"github.com/bayansar/AdventureWorkReview/validator"
 	"github.com/gorilla/mux"
 	"github.com/segmentio/ksuid"
+	"log"
+	"net/http"
 
 	"github.com/bayansar/AdventureWorkReview/app"
-	"github.com/bayansar/AdventureWorkReview/rabbitmq"
 )
 
 type Application struct {
-	ReviewQueueService *rabbitmq.ReviewQueueService
-	ReviewDbService    *app.ReviewDbService
+	ReviewQueueService app.ReviewQueueService
+	ReviewDbService    app.ReviewDbService
 }
 
 func main() {
 
+	//a := rabbitmq.ReviewQueueService{nil,nil,nil,""}
 	appContext := &Application{
-		ReviewQueueService: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "test"),
-		ReviewDbService:    nil,
+		ReviewQueueService: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "beforeValidate"),
+		ReviewDbService: nil,
 	}
+
+	validatorWorker := &validator.Validator{
+		BadWords: make([]string, 4),
+		SubQname: "beforeValidate",
+		PubQname: "afterValidate",
+
+		PublisherQueue: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "afterValidate"),
+		ConsumerQueue: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "beforeValidate"),
+	}
+
+
 
 	r := mux.NewRouter()
 	r.HandleFunc("/api/reviews", appContext.review()).Methods("POST")
+	fmt.Println("Started listening on 8888...")
 	http.ListenAndServe(":8888", r)
 }
 

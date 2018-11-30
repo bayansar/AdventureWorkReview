@@ -1,17 +1,16 @@
 package rabbitmq
 
 import (
+	"encoding/json"
 	"github.com/bayansar/AdventureWorkReview/app"
 	"github.com/streadway/amqp"
 	"log"
-	"encoding/json"
 )
 
 type ReviewQueueService struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
-	q    amqp.Queue
-	qname string
+	conn  *amqp.Connection
+	ch    *amqp.Channel
+	q     amqp.Queue
 }
 
 func NewReviewQueueService(uri string, qname string) *ReviewQueueService {
@@ -37,10 +36,10 @@ func NewReviewQueueService(uri string, qname string) *ReviewQueueService {
 		log.Fatalf("%s: %s", "Failed to declare a queue", err)
 	}
 
-	return &ReviewQueueService{
-		conn:  conn,
-		ch:    ch,
-		q:     q,
+	return &ReviewQueueService {
+		conn: conn,
+		ch:   ch,
+		q:    q,
 	}
 }
 
@@ -51,21 +50,21 @@ func (rqs *ReviewQueueService) Publish(review *app.Review) error {
 		return err
 	}
 	err = rqs.ch.Publish(
-		"",     // exchange
+		"",         // exchange
 		rqs.q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        b,
 		})
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("%s: %s", "Failed to publish a message", err)
 	}
 	return err
 }
 
 func (rqs *ReviewQueueService) Subscribe() (*app.Review, error) {
-	return nil,nil
+	return nil, nil
 }
