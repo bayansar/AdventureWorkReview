@@ -1,81 +1,65 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/bayansar/AdventureWorkReview/rabbitmq"
-	"github.com/bayansar/AdventureWorkReview/validator"
-	"github.com/gorilla/mux"
-	"github.com/segmentio/ksuid"
 	"log"
 	"net/http"
 
-	"github.com/bayansar/AdventureWorkReview/app"
+	"github.com/caarlos0/env"
+	"github.com/gorilla/mux"
+
+	"github.com/bayansar/AdventureWorkReview/review"
+	"github.com/bayansar/AdventureWorkReview/mysql"
+	"github.com/bayansar/AdventureWorkReview/email"
+	"github.com/bayansar/AdventureWorkReview/rabbitmq"
 )
 
+type Config struct {
+	RabbitUri         string   `env:"RABBIT_URI"`
+	DbUser            string   `env:"MYSQL_USER"`
+	DbPassword        string   `env:"MYSQL_PASSWORD"`
+	DbName            string   `env:"DB_NAME"`
+	ValidateQueueName string   `env:"VALIDATE_QUEUE_NAME"`
+	NotifyQueueName   string   `env:"NOTIFY_QUEUE_NAME"`
+	BadWords          []string `env:"BAD_WORDS" envSeparator:","`
+}
+
 type Application struct {
-	ReviewQueueService app.ReviewQueueService
-	ReviewDbService    app.ReviewDbService
+	ReviewQueueService review.ReviewQueueService
+	ReviewDbService    review.ReviewDbService
 }
 
 func main() {
 
-	//a := rabbitmq.ReviewQueueService{nil,nil,nil,""}
-	appContext := &Application{
-		ReviewQueueService: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "beforeValidate"),
-		ReviewDbService: nil,
+	cfg := Config{}
+	env.Parse(&cfg)
+
+	reviewValidateQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.ValidateQueueName)
+	reviewNotifyQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.NotifyQueueName)
+	reviewDbService := mysql.NewReviewDbService(cfg.DbUser, cfg.DbPassword, cfg.DbName)
+	notifyService := email.NewReviewEmailService()
+
+	reviewApi := &review.Api{
+		Queue: reviewValidateQueueService,
+		DB:    reviewDbService,
 	}
 
-	validatorWorker := &validator.Validator{
-		BadWords: make([]string, 4),
-		SubQname: "beforeValidate",
-		PubQname: "afterValidate",
-
-		PublisherQueue: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "afterValidate"),
-		ConsumerQueue: rabbitmq.NewReviewQueueService("amqp://guest:guest@127.0.0.1:5672", "beforeValidate"),
+	reviewValidator := &review.Validator{
+		ConsumerQueue:  reviewValidateQueueService,
+		PublisherQueue: reviewNotifyQueueService,
+		DB:             reviewDbService,
+		BadWords:       cfg.BadWords,
 	}
+	reviewValidator.Run()
 
-
+	reviewNotifier := &review.Notifier{
+		ConsumerQueue: reviewNotifyQueueService,
+		NotifyService: notifyService,
+	}
+	reviewNotifier.Run()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/api/reviews", appContext.review()).Methods("POST")
-	fmt.Println("Started listening on 8888...")
-	http.ListenAndServe(":8888", r)
-}
+	r.HandleFunc("/api/reviews", reviewApi.CreateReview()).Methods("POST")
 
-func (appContext *Application) review() http.HandlerFunc {
-	return errorHandler(func(w http.ResponseWriter, r *http.Request) error {
-		defer r.Body.Close()
-
-		newReview := app.Review{}
-		if err := json.NewDecoder(r.Body).Decode(&newReview); err != nil {
-			return fmt.Errorf("cannot decoding rule : %v", err)
-		}
-
-		newReview.ID = ksuid.New().String()
-		err := appContext.ReviewQueueService.Publish(&newReview)
-		if err != nil{
-			json.NewEncoder(w).Encode(map[string]string{
-				"success": "false",
-				"message": err.Error(),
-			})
-			return err
-		}
-
-		json.NewEncoder(w).Encode(map[string]string{
-			"success": "true",
-			"reviewId": newReview.ID,
-		})
-		return nil
-	})
-}
-
-func errorHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := f(w, r)
-		if err != nil {
-			log.Printf("handling %q: %v", r.RequestURI, err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
+	log.Println("Started listening on 8888...")
+	log.Fatal(http.ListenAndServe(":8888", nil))
 }
