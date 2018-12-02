@@ -25,11 +25,6 @@ type Config struct {
 	BadWords          []string `env:"BAD_WORDS" envSeparator:","`
 }
 
-type Application struct {
-	ReviewQueueService review.ReviewQueueService
-	ReviewDbService    review.ReviewDbService
-}
-
 func main() {
 
 	cfg := Config{}
