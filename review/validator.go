@@ -16,7 +16,7 @@ type Validator struct {
 func (v *Validator) Run() error {
 	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
 	if err != nil {
-		log.Printf("%s: %s", "Failed parse review", err)
+		log.Printf("%s: %s", "Failed compile regex", err)
 		return err
 	}
 
@@ -33,8 +33,14 @@ func (v *Validator) Run() error {
 			} else {
 				m.Status = "DECLINED"
 			}
-			v.DB.Update(&m)
-			v.PublisherQueue.Publish(&m)
+			_, err := v.DB.Update(&m)
+			if err != nil {
+				continue
+			}
+			err = v.PublisherQueue.Publish(&m)
+			if err != nil {
+				continue
+			}
 		}
 	}()
 

@@ -16,9 +16,9 @@ func NewReviewEmailService() *ReviewEmailService{
 func (res *ReviewEmailService) Notify(review *review.Review, message string) error {
 
 	/*
-	*** Simulating send email line below ***
+	*** Send email is simulated below line***
 	res.emailService.sendEmail(review.Name, review.Email, message)
 	*/
-	log.Println("Email is sent successfully")
+	log.Println("email is sent successfully")
 	return nil
 }

@@ -62,6 +62,7 @@ func (rqs *ReviewQueueService) Publish(review *review.Review) error {
 	if err != nil {
 		log.Printf("%s: %s", "Failed to publish a message", err)
 	}
+	log.Printf("the review is pushed to queue: %s with id: %d,", rqs.q.Name, review.ID)
 	return err
 }
 
@@ -78,7 +79,7 @@ func (rqs *ReviewQueueService) Subscribe() (<-chan review.Review, error) {
 
 	if err != nil {
 		log.Printf("%s: %s", "Failed to register a consumer", err)
-		return nil,err
+		return nil, err
 	}
 
 	reviewMessages := make(chan review.Review)
@@ -86,14 +87,15 @@ func (rqs *ReviewQueueService) Subscribe() (<-chan review.Review, error) {
 	go func() {
 		for m := range messages {
 			r := review.Review{}
-			err := json.Unmarshal(m.Body,&r)
+			err := json.Unmarshal(m.Body, &r)
 			if err != nil {
 				log.Printf("%s: %s", "Failed to deserialize review", err)
 				continue
 			}
+			log.Printf("review is retrieved from queue: %s  with id: %d,", rqs.q.Name, r.ID)
 			reviewMessages <- r
 		}
 	}()
 
-	return reviewMessages,nil
+	return reviewMessages, nil
 }

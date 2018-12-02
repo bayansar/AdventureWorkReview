@@ -11,6 +11,7 @@ import (
 	"github.com/bayansar/AdventureWorkReview/mysql"
 	"github.com/bayansar/AdventureWorkReview/email"
 	"github.com/bayansar/AdventureWorkReview/rabbitmq"
+	"os"
 )
 
 type Config struct {
@@ -50,17 +51,25 @@ func main() {
 		DB:             reviewDbService,
 		BadWords:       cfg.BadWords,
 	}
-	reviewValidator.Run()
+	err := reviewValidator.Run()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	reviewNotifier := &review.Notifier{
 		ConsumerQueue: reviewNotifyQueueService,
 		NotifyService: notifyService,
 	}
-	reviewNotifier.Run()
+	err = reviewNotifier.Run()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/api/reviews", reviewApi.CreateReview()).Methods("POST")
+	r.HandleFunc("/api/reviews/approved", reviewApi.GetApprovedReviews()).Methods("GET")
+	r.HandleFunc("/api/reviews/{id}", reviewApi.GetReviewById()).Methods("GET")
 
-	log.Println("Started listening on 8888...")
+	log.Println("Server listening on port 8888...")
 	log.Fatal(http.ListenAndServe(":8888", r))
 }

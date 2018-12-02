@@ -25,9 +25,10 @@ type ReviewQueueService interface {
 }
 
 type ReviewDbService interface {
-	//Get(id string) (*Review, error)
 	Insert(review *Review) (int64, error)
 	Update(review *Review) (int64, error)
+	GetById(id int64) (*Review, error)
+	GetApprovedReviews() ([]*Review, error)
 }
 
 type ReviewNotifyService interface {

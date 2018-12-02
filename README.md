@@ -1,6 +1,6 @@
 # AdventureWorkReview
 
-**Please follow the instructions below:**
+## **Instructions**
 
 1. *Clone the repository*
 2. *Download docker images*
@@ -20,7 +20,7 @@
     ``` 
    docker-compose up -d
    ```
-   - Please wait for migrating database. When it is complete, the application container would start.
+   - Please wait several minutes for migrating database. When it is complete, the application container would start.
    - You can check whether it starts with the command below:
         ``` 
        docker ps
@@ -31,5 +31,14 @@
     -d '{
     "name": "Elvis Presley",
     "email": "theking@elvismansion.com", "productid": "3",
-    "review": "I really love the product and will recommend!" }
+    "review": "I really love the product and will recommend!" }'
     ``` 
+    
+    
+    
+## **REST API**
+``` 
+- POST  '/api/reviews'          (Create a new review)
+- GET   '/api/reviews/approved' (Get all approved reviews)
+- GET   '/api/reviews/{id}'     (Get a review)    
+``` 
