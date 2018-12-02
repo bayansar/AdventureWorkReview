@@ -14,11 +14,13 @@ type ReviewDbService struct {
 	orm orm.Ormer
 }
 
-func NewReviewDbService(username, password, dbName string) *ReviewDbService {
+func NewReviewDbService(username, password, dbName, host string) *ReviewDbService {
 	orm.RegisterModel(new(review.Review))
 
-	orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@/%s?charset=utf8", username, password, dbName), 30)
-
+	orm.RegisterDataBase(
+		"default",
+		"mysql",
+		fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", username, password, host, dbName), 30)
 	orm.RunSyncdb("default", false, true)
 
 	orm.Debug = true

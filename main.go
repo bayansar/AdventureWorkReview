@@ -15,6 +15,7 @@ import (
 
 type Config struct {
 	RabbitUri         string   `env:"RABBIT_URI"`
+	DbHost            string   `env:"DB_HOST"`
 	DbUser            string   `env:"MYSQL_USER"`
 	DbPassword        string   `env:"MYSQL_PASSWORD"`
 	DbName            string   `env:"DB_NAME"`
@@ -35,7 +36,7 @@ func main() {
 
 	reviewValidateQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.ValidateQueueName)
 	reviewNotifyQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.NotifyQueueName)
-	reviewDbService := mysql.NewReviewDbService(cfg.DbUser, cfg.DbPassword, cfg.DbName)
+	reviewDbService := mysql.NewReviewDbService(cfg.DbUser, cfg.DbPassword, cfg.DbName, cfg.DbHost)
 	notifyService := email.NewReviewEmailService()
 
 	reviewApi := &review.Api{
@@ -61,5 +62,5 @@ func main() {
 	r.HandleFunc("/api/reviews", reviewApi.CreateReview()).Methods("POST")
 
 	log.Println("Started listening on 8888...")
-	log.Fatal(http.ListenAndServe(":8888", nil))
+	log.Fatal(http.ListenAndServe(":8888", r))
 }
