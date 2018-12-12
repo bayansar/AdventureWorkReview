@@ -21,13 +21,13 @@ services:
     build: ./
     image: review-app:1.0
     environment:
-      RABBIT_UR: amqp://guest:guest@rabbit:5672
+      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
       MYSQL_USER: root
       MYSQL_PASSWORD: 1234
       DB_NAME: adventureworks
       VALIDATE_QUEUE_NAME: validate
       NOTIFY_QUEUE_NAME: notify
-      BAD_WORDS: fee,nee,cruul,leentdock
+      BAD_WORDS: fee,nee,cruul,leent
       DB_HOST: mysql
     restart: unless-stopped
     ports:
