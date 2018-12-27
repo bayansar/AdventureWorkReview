@@ -17,10 +17,13 @@ type ReviewDbService struct {
 func NewReviewDbService(username, password, dbName, host string) *ReviewDbService {
 	orm.RegisterModel(new(review.Review))
 
-	orm.RegisterDataBase(
+	err := orm.RegisterDataBase(
 		"default",
 		"mysql",
 		fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8", username, password, host, dbName), 30)
+	if err != nil {
+
+	}
 	orm.RunSyncdb("default", false, true)
 
 	return &ReviewDbService{

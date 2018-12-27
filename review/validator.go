@@ -1,15 +1,15 @@
 package review
 
 import (
-	"strings"
-	"regexp"
 	"log"
+	"regexp"
+	"strings"
 )
 
 type Validator struct {
-	PublisherQueue ReviewQueueService
-	ConsumerQueue  ReviewQueueService
-	DB             ReviewDbService
+	PublisherQueue QueueService
+	ConsumerQueue  QueueService
+	DB             DbService
 	BadWords       []string
 }
 

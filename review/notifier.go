@@ -5,15 +5,15 @@ import (
 )
 
 type Notifier struct {
-	ConsumerQueue ReviewQueueService
-	NotifyService ReviewNotifyService
+	ConsumerQueue QueueService
+	NotifyService NotifyService
 	approveMes    string
 	declineMes    string
 }
 
 func (n *Notifier) Run() error {
 	n.approveMes = "Your review is approved and released!"
-	n.approveMes = "Your review is declined because of bad language!"
+	n.declineMes = "Your review is declined because of bad language!"
 
 	messages, err := n.ConsumerQueue.Subscribe()
 	if err != nil {

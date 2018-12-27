@@ -19,18 +19,18 @@ func (u *Review) TableName() string {
 	return "productreview"
 }
 
-type ReviewQueueService interface {
+type QueueService interface {
 	Publish(review *Review) error
 	Subscribe() (<-chan Review, error)
 }
 
-type ReviewDbService interface {
+type DbService interface {
 	Insert(review *Review) (int64, error)
 	Update(review *Review) (int64, error)
 	GetById(id int64) (*Review, error)
 	GetApprovedReviews() ([]*Review, error)
 }
 
-type ReviewNotifyService interface {
+type NotifyService interface {
 	Notify(review *Review, message string) error
 }

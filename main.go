@@ -7,28 +7,31 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/gorilla/mux"
 
-	"github.com/bayansar/AdventureWorkReview/review"
-	"github.com/bayansar/AdventureWorkReview/mysql"
 	"github.com/bayansar/AdventureWorkReview/email"
+	"github.com/bayansar/AdventureWorkReview/mysql"
 	"github.com/bayansar/AdventureWorkReview/rabbitmq"
+	"github.com/bayansar/AdventureWorkReview/review"
 	"os"
 )
 
 type Config struct {
-	RabbitUri         string   `env:"RABBIT_URI"`
-	DbHost            string   `env:"DB_HOST"`
-	DbUser            string   `env:"MYSQL_USER"`
-	DbPassword        string   `env:"MYSQL_PASSWORD"`
-	DbName            string   `env:"DB_NAME"`
-	ValidateQueueName string   `env:"VALIDATE_QUEUE_NAME"`
-	NotifyQueueName   string   `env:"NOTIFY_QUEUE_NAME"`
-	BadWords          []string `env:"BAD_WORDS" envSeparator:","`
+	RabbitUri         string   `env:"RABBIT_URI,required"`
+	DbHost            string   `env:"DB_HOST,required"`
+	DbUser            string   `env:"MYSQL_USER,required"`
+	DbPassword        string   `env:"MYSQL_PASSWORD,required"`
+	DbName            string   `env:"DB_NAME,required"`
+	ValidateQueueName string   `env:"VALIDATE_QUEUE_NAME,required"`
+	NotifyQueueName   string   `env:"NOTIFY_QUEUE_NAME,required"`
+	BadWords          []string `env:"BAD_WORDS,required" envSeparator:","`
 }
 
 func main() {
 
 	cfg := Config{}
-	env.Parse(&cfg)
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatalf("%s : %v","Couldn't parse environment variables!" , err)
+	}
 
 	reviewValidateQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.ValidateQueueName)
 	reviewNotifyQueueService := rabbitmq.NewReviewQueueService(cfg.RabbitUri, cfg.NotifyQueueName)
@@ -46,7 +49,7 @@ func main() {
 		DB:             reviewDbService,
 		BadWords:       cfg.BadWords,
 	}
-	err := reviewValidator.Run()
+	err = reviewValidator.Run()
 	if err != nil {
 		os.Exit(1)
 	}

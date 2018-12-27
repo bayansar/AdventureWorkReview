@@ -10,8 +10,8 @@ import (
 )
 
 type Api struct {
-	Queue ReviewQueueService
-	DB    ReviewDbService
+	Queue QueueService
+	DB    DbService
 }
 
 func (a *Api) CreateReview() http.HandlerFunc {

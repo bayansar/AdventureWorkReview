@@ -2,9 +2,10 @@ package rabbitmq
 
 import (
 	"encoding/json"
-	"log"
-	"github.com/streadway/amqp"
 	"github.com/bayansar/AdventureWorkReview/review"
+	"github.com/pkg/errors"
+	"github.com/streadway/amqp"
+	"log"
 )
 
 type ReviewQueueService struct {
@@ -13,10 +14,11 @@ type ReviewQueueService struct {
 	q    amqp.Queue
 }
 
-func NewReviewQueueService(uri string, qname string) *ReviewQueueService {
+func NewReviewQueueService(uri string, qname string) (*ReviewQueueService, error) {
 	conn, err := amqp.Dial(uri)
 	if err != nil {
-		log.Printf("%s: %s", "Failed to connect to RabbitMQ", err)
+		//log.Printf("%s: %s", "Failed to connect to RabbitMQ", err)
+		return nil, errors.Wrap(err, "Failed to connect to RabbitMQ")
 	}
 
 	ch, err := conn.Channel()
@@ -40,7 +42,7 @@ func NewReviewQueueService(uri string, qname string) *ReviewQueueService {
 		conn: conn,
 		ch:   ch,
 		q:    q,
-	}
+	},nil
 }
 
 func (rqs *ReviewQueueService) Publish(review *review.Review) error {
